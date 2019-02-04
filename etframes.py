@@ -30,7 +30,7 @@ def interval_frac(interval, datapoint):
     the fractional distance of that point along the interval
     Clipped to [0,1]
     """
-    pos = (datapoint - interval.get_bounds()[0])/interval.span()
+    pos = (datapoint - interval[0])/interval.ptp()
     # don't allow past border of axis
     return max(0.0, min(1.0, pos))
 
@@ -70,10 +70,10 @@ class RangeFrameArtist(Artist):
 
     def make_range_frame(self):
 
-        xminf, xmaxf = data_bounds_on_axis(self.axes.viewLim.intervalx(),
+        xminf, xmaxf = data_bounds_on_axis(self.axes.viewLim.intervalx,
                                            self.xbounds)
 
-        yminf, ymaxf = data_bounds_on_axis(self.axes.viewLim.intervaly(),
+        yminf, ymaxf = data_bounds_on_axis(self.axes.viewLim.intervaly,
                                            self.ybounds)
 
 
