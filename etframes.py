@@ -8,9 +8,10 @@ License: Distributed under the PSF license, http://www.python.org/psf/license/
 """
 import matplotlib.pylab
 
+import matplotlib as mpl
 from matplotlib.collections import LineCollection
 from matplotlib.artist import Artist
-from matplotlib.ticker import FixedLocator
+from matplotlib.ticker import FixedLocator, FormatStrFormatter
 
 __all__ = ["add_range_frame", "add_dot_dash_plot"]
 
@@ -23,6 +24,50 @@ def cleanframe_and_ticks(axes):
     # Only show ticks on bottom and left frame
     axes.get_xaxis().tick_bottom()
     axes.get_yaxis().tick_left()
+
+def adjust_ticks_to_bounds(ticks, bounds, pad=1e-5,
+                           show_data_min=True, show_data_max=True):
+    ticks_selection = (bounds[0] - pad <= ticks) & \
+                      (bounds[1] + pad >= ticks)
+    inbound_ticks = ticks[ticks_selection]
+    outbound_ticks = []
+    if show_data_min and bounds[0] + pad < inbound_ticks.min():
+        outbound_ticks.append(bounds[0])
+    if show_data_max and bounds[1] - pad > inbound_ticks.max():
+        outbound_ticks.append(bounds[1])
+    return inbound_ticks, outbound_ticks
+
+def add_range_ticks(axes, xbounds, ybounds,
+                    show_x_min=True, show_x_max=True,
+                    show_y_min=True, show_y_max=True):
+
+    axes.tick_params(direction='out')
+    # Set minor ticks to the same size as major ones to align min and max
+    # labels, and make them transparent to hide them.
+    axes.tick_params(
+        which='minor',
+        direction='out',
+        size=mpl.rcParams['xtick.major.size'],
+        width=mpl.rcParams['xtick.major.width'],
+        pad=mpl.rcParams['xtick.major.pad'],
+        color=(0,0,0,0))
+    for axis in (axes.xaxis, axes.yaxis):
+        formatter = axis.get_major_formatter()
+        # formatter = FormatStrFormatter('%.1f')
+        axis.set_minor_formatter(formatter)
+
+    xticks, xboundticks = adjust_ticks_to_bounds(
+        axes.get_xticks(),
+        xbounds,
+        show_data_min=show_x_min, show_data_max=show_x_max)
+    yticks, yboundticks = adjust_ticks_to_bounds(
+        axes.get_yticks(),
+        ybounds,
+        show_data_min=show_y_min, show_data_max=show_y_max)
+    axes.set_xticks(xticks)
+    axes.set_yticks(yticks)
+    axes.set_xticks(xboundticks, minor=True)
+    axes.set_yticks(yboundticks, minor=True)
 
 
 def interval_frac(interval, datapoint):
@@ -93,7 +138,9 @@ class RangeFrameArtist(Artist):
 
 
 def add_range_frame(axes=None, color="k", linewidth=1.0,
-                         xbounds=None, ybounds=None):
+                    xbounds=None, ybounds=None,
+                    show_x_min=True, show_x_max=True,
+                    show_y_min=True, show_y_max=True):
     """
     Adds a range frame to a matplotlib graph.  The range frame is
     described in Tufte's "The Visual Display of Quantitative
@@ -111,7 +158,9 @@ def add_range_frame(axes=None, color="k", linewidth=1.0,
 
     xbounds, ybounds: tuple (min,max) on x and y axes
 
-    
+    show_x_min, show_x_max, show_y_min, show_y_max : bool (default: True)
+        If true, add the value of the minimum or maximum data value on the
+        corresponding axis.
     """
 
     if axes is None:
@@ -128,6 +177,9 @@ def add_range_frame(axes=None, color="k", linewidth=1.0,
                                      ybounds=ybounds))
 
     cleanframe_and_ticks(axes)
+    add_range_ticks(axes, xbounds, ybounds,
+                    show_x_min=show_x_min, show_x_max=show_x_max,
+                    show_y_min=show_y_min, show_y_max=show_y_max)
 
 
 def add_dot_dash_plot(axes=None, xs=None, ys=None):
