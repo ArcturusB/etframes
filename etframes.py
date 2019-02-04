@@ -114,12 +114,13 @@ def add_range_frame(axes=None, color="k", linewidth=1.0,
     
     """
 
-# Implementation detail: you might expect that the range of values is
-# available via axes.dataLim.  Unfortunitely this range seems to
-# extend .2 past the real min and max.
-
     if axes is None:
         axes = matplotlib.pylab.gca()
+
+    if xbounds is None:
+        xbounds = axes.dataLim.intervalx
+    if ybounds is None:
+        ybounds = axes.dataLim.intervaly
 
     axes.add_artist(RangeFrameArtist(color=color,
                                      linewidth=linewidth,
