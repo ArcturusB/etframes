@@ -70,27 +70,6 @@ def add_range_ticks(axes, xbounds, ybounds,
     axes.set_yticks(yboundticks, minor=True)
 
 
-def interval_frac(interval, datapoint):
-    """Given an interval and a point in the same range, return
-    the fractional distance of that point along the interval
-    Clipped to [0,1]
-    """
-    pos = (datapoint - interval[0])/interval.ptp()
-    # don't allow past border of axis
-    return max(0.0, min(1.0, pos))
-
-
-def data_bounds_on_axis(view_interval, data_bounds):
-    "Map min/max from data space to viewport space."
-    
-    if data_bounds is None:
-        return (0.0, 1.0)
-    
-    lower = interval_frac(view_interval, data_bounds[0])
-    upper = interval_frac(view_interval, data_bounds[1])
-    return lower, upper
-
-
 class RangeFrameArtist(Artist):
     "Draws range frames on a graph"
     
@@ -98,7 +77,8 @@ class RangeFrameArtist(Artist):
         """
         color: str indicating color of line
         linewidth: width of line to draw
-        xbounds, ybounds: tuple (min,max) of data on x and y axis
+        xbounds, ybounds: tuple (min,max) of data on x and y axis, as a
+            fraction of the axes size.
         """
         Artist.__init__(self)
         self.color = color
@@ -115,15 +95,8 @@ class RangeFrameArtist(Artist):
 
     def make_range_frame(self):
 
-        xminf, xmaxf = data_bounds_on_axis(self.axes.viewLim.intervalx,
-                                           self.xbounds)
-
-        yminf, ymaxf = data_bounds_on_axis(self.axes.viewLim.intervaly,
-                                           self.ybounds)
-
-
-        xline = [(xminf,0), (xmaxf,0)]
-        yline = [(0,yminf), (0,ymaxf)]
+        xline = [(self.xbounds[0], 0), (self.xbounds[1], 0)]
+        yline = [(0, self.ybounds[0]), (0, self.ybounds[1])]
 
         range_lines = LineCollection(segments=[xline, yline],
                                      linewidths=[self.linewidth],
@@ -171,10 +144,15 @@ def add_range_frame(axes=None, color="k", linewidth=1.0,
     if ybounds is None:
         ybounds = axes.dataLim.intervaly
 
+    # transform x and y bounds from data to axes coordinates in [0, 1]
+    trans = axes.transData + axes.transAxes.inverted()
+    frame_ymin, frame_xmin = trans.transform_point((xbounds[0], ybounds[0]))
+    frame_ymax, frame_xmax = trans.transform_point((xbounds[1], ybounds[1]))
+
     axes.add_artist(RangeFrameArtist(color=color,
                                      linewidth=linewidth,
-                                     xbounds=xbounds,
-                                     ybounds=ybounds))
+                                     xbounds=(frame_xmin, frame_xmax),
+                                     ybounds=(frame_ymin, frame_ymax)))
 
     cleanframe_and_ticks(axes)
     add_range_ticks(axes, xbounds, ybounds,
