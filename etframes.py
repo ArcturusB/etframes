@@ -25,26 +25,32 @@ def cleanframe_and_ticks(axes):
     axes.get_xaxis().tick_bottom()
     axes.get_yaxis().tick_left()
 
-def adjust_ticks_to_bounds(ticks, bounds, pad=1e-5,
+def adjust_ticks_to_bounds(ticks, minor_ticks, bounds, pad=1e-5,
                            show_data_min=True, show_data_max=True):
+    # inbound major ticks
     ticks_selection = (bounds[0] - pad <= ticks) & \
                       (bounds[1] + pad >= ticks)
     inbound_ticks = ticks[ticks_selection]
+    # inbound minor ticks
+    try:
+        minor_ticks_selection = (bounds[0] - pad <= minor_ticks) & \
+                                (bounds[1] + pad >= minor_ticks)
+        inbound_minor_ticks = minor_ticks[minor_ticks_selection]
+    except TypeError:
+        inbound_minor_ticks = []
+    # outbound major ticks
     outbound_ticks = []
     if show_data_min and bounds[0] + pad < inbound_ticks.min():
         outbound_ticks.append(bounds[0])
     if show_data_max and bounds[1] - pad > inbound_ticks.max():
         outbound_ticks.append(bounds[1])
-    return inbound_ticks, outbound_ticks
+    return inbound_ticks, outbound_ticks, inbound_minor_ticks
 
-def add_range_ticks(axes, xbounds, ybounds,
-                    show_x_min=True, show_x_max=True,
-                    show_y_min=True, show_y_max=True):
-
-    axes.tick_params(direction='out')
-    # Set minor ticks to the same size as major ones to align min and max
-    # labels, and make them transparent to hide them.
+def set_tick_for_data_bounds(axes, axis_name):
+    ''' Set minor ticks to the same size as major ones to align min and max
+    labels, and make them transparent to hide them. '''
     axes.tick_params(
+        axis=axis_name,
         which='minor',
         direction='out',
         size=mpl.rcParams['xtick.major.size'],
@@ -53,21 +59,36 @@ def add_range_ticks(axes, xbounds, ybounds,
         color=(0,0,0,0))
     for axis in (axes.xaxis, axes.yaxis):
         formatter = axis.get_major_formatter()
-        # formatter = FormatStrFormatter('%.1f')
         axis.set_minor_formatter(formatter)
 
-    xticks, xboundticks = adjust_ticks_to_bounds(
+def add_range_ticks(axes, xbounds, ybounds,
+                    show_x_min=True, show_x_max=True,
+                    show_y_min=True, show_y_max=True):
+
+    axes.tick_params(direction='out', which='both')
+
+    xticks, xboundticks, xminorticks = adjust_ticks_to_bounds(
         axes.get_xticks(),
+        axes.get_xticks(minor=True),
         xbounds,
         show_data_min=show_x_min, show_data_max=show_x_max)
-    yticks, yboundticks = adjust_ticks_to_bounds(
+    yticks, yboundticks, yminorticks = adjust_ticks_to_bounds(
         axes.get_yticks(),
+        axes.get_yticks(minor=True),
         ybounds,
         show_data_min=show_y_min, show_data_max=show_y_max)
     axes.set_xticks(xticks)
     axes.set_yticks(yticks)
-    axes.set_xticks(xboundticks, minor=True)
-    axes.set_yticks(yboundticks, minor=True)
+    if show_x_min or show_x_max:
+        set_tick_for_data_bounds(axes, 'x')
+        axes.set_xticks(xboundticks, minor=True)
+    else:
+        axes.set_xticks(xminorticks, minor=True)
+    if show_y_min or show_y_max:
+        set_tick_for_data_bounds(axes, 'y')
+        axes.set_yticks(yboundticks, minor=True)
+    else:
+        axes.set_yticks(yminorticks, minor=True)
 
 
 class RangeFrameArtist(Artist):
