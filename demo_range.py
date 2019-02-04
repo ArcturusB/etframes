@@ -2,7 +2,7 @@ import etframes
 from pylab import *
 
 
-ys = [1,1.5,2,2.5,5]
+ys = [1.4,1.5,2,2.5,4.8]
 xs = range(len(ys))
 
 
@@ -13,7 +13,8 @@ def minmax(data):
 
 etframes.add_range_frame(gca(),
                          xbounds=minmax(xs),
-                         ybounds=minmax(ys))
+                         ybounds=minmax(ys),
+                         show_y_min=False)
 
 show()
 

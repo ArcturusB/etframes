@@ -24,9 +24,9 @@ scatter plot.  When there are many values in the graph this can be a
 more effective way to understand their distribution than looking at
 the raw data.  For example see
 
-![Example of a dash dot plot](http://hupp.org//adam/images/ddp-small.png)
+![Example of a dash dot plot](demo/demo_ddp.png)
 
-See [demo_ddp.py](http://github.com/ahupp/etframes/blob/master/demo_ddp.py)
+See [demo_ddp.py](demo_ddp.py)
 for a working example.
 
 Range Frames
@@ -37,9 +37,9 @@ information.  Instead of drawing a full frame around the graph the
 frame is only drawn from the minimum to the maximum value along that
 axis.  For example:
 
-![Example of a range frame](http://hupp.org/adam/images/range-small.png)
+![Example of a range frame](demo/demo_range.png)
 
-See [demo_range.py](http://github.com/ahupp/etframes/blob/master/demo_range.py)
+See [demo_range.py](demo_range.py)
 for a working example.
 
 Other Work
