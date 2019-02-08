@@ -167,8 +167,8 @@ def add_range_frame(axes=None, color="k", linewidth=1.0,
 
     # transform x and y bounds from data to axes coordinates in [0, 1]
     trans = axes.transData + axes.transAxes.inverted()
-    frame_ymin, frame_xmin = trans.transform_point((xbounds[0], ybounds[0]))
-    frame_ymax, frame_xmax = trans.transform_point((xbounds[1], ybounds[1]))
+    frame_xmin, frame_ymin = trans.transform_point((xbounds[0], ybounds[0]))
+    frame_xmax, frame_ymax = trans.transform_point((xbounds[1], ybounds[1]))
 
     axes.add_artist(RangeFrameArtist(color=color,
                                      linewidth=linewidth,
