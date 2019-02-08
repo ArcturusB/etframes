@@ -25,8 +25,8 @@ def cleanframe_and_ticks(axes):
     axes.get_xaxis().tick_bottom()
     axes.get_yaxis().tick_left()
 
-def adjust_ticks_to_bounds(ticks, minor_ticks, bounds, pad=1e-5,
-                           show_data_min=True, show_data_max=True):
+def adjust_ticks_to_bounds(ticks, minor_ticks, bounds,
+                           pad=1e-5, show_bounds=False):
     # inbound major ticks
     ticks_selection = (bounds[0] - pad <= ticks) & \
                       (bounds[1] + pad >= ticks)
@@ -39,6 +39,10 @@ def adjust_ticks_to_bounds(ticks, minor_ticks, bounds, pad=1e-5,
     except TypeError:
         inbound_minor_ticks = []
     # outbound major ticks
+    if isinstance(show_bounds, bool):
+        show_data_min, show_data_max = show_bounds, show_bounds
+    else:
+        show_data_min, show_data_max = show_bounds
     outbound_ticks = []
     if show_data_min and bounds[0] + pad < inbound_ticks.min():
         outbound_ticks.append(bounds[0])
@@ -62,8 +66,7 @@ def set_tick_for_data_bounds(axes, axis_name):
         axis.set_minor_formatter(formatter)
 
 def add_range_ticks(axes, xbounds, ybounds,
-                    show_x_min=True, show_x_max=True,
-                    show_y_min=True, show_y_max=True):
+                    show_xbounds=False, show_ybounds=False):
 
     axes.tick_params(direction='out', which='both')
 
@@ -71,20 +74,24 @@ def add_range_ticks(axes, xbounds, ybounds,
         axes.get_xticks(),
         axes.get_xticks(minor=True),
         xbounds,
-        show_data_min=show_x_min, show_data_max=show_x_max)
+        show_bounds=show_xbounds)
     yticks, yboundticks, yminorticks = adjust_ticks_to_bounds(
         axes.get_yticks(),
         axes.get_yticks(minor=True),
         ybounds,
-        show_data_min=show_y_min, show_data_max=show_y_max)
+        show_bounds=show_ybounds)
     axes.set_xticks(xticks)
     axes.set_yticks(yticks)
-    if show_x_min or show_x_max:
+
+    show_any_bound = lambda b: any((b, ) if isinstance(b, bool) else b)
+
+    if show_any_bound(show_xbounds):
         set_tick_for_data_bounds(axes, 'x')
         axes.set_xticks(xboundticks, minor=True)
     else:
         axes.set_xticks(xminorticks, minor=True)
-    if show_y_min or show_y_max:
+
+    if show_any_bound(show_ybounds):
         set_tick_for_data_bounds(axes, 'y')
         axes.set_yticks(yboundticks, minor=True)
     else:
@@ -179,8 +186,7 @@ def axes_data_bound(ax, xbounds, ybounds):
 
 def add_range_frame(axes=None, color="k", linewidth=1.0,
                     xbounds=None, ybounds=None,
-                    show_x_min=True, show_x_max=True,
-                    show_y_min=True, show_y_max=True):
+                    show_xbounds=False, show_ybounds=False):
     """
     Adds a range frame to a matplotlib graph.  The range frame is
     described in Tufte's "The Visual Display of Quantitative
@@ -199,9 +205,11 @@ def add_range_frame(axes=None, color="k", linewidth=1.0,
     xbounds, ybounds: tuple (min,max) on x and y axes
         If None, use values from axes.dataLim.
 
-    show_x_min, show_x_max, show_y_min, show_y_max : bool (default: True)
-        If true, add the value of the minimum or maximum data value on the
-        corresponding axis.
+    show_xbounds, show_ybounds : bool, or 2-tuple of bools (default: False)
+        Wheter to print the values of the x or y bounds as tick labels on the
+        corresponding axis. A tuple of boolean can be passed to show only the
+        upper or lower bounds (eg. `show_xbounds=(True, False)` prints the
+        lower bound, but not the upper bound.
     """
 
     if axes is None:
@@ -221,8 +229,7 @@ def add_range_frame(axes=None, color="k", linewidth=1.0,
 
     cleanframe_and_ticks(axes)
     add_range_ticks(axes, (xmin, xmax), (ymin, ymax),
-                    show_x_min=show_x_min, show_x_max=show_x_max,
-                    show_y_min=show_y_min, show_y_max=show_y_max)
+                    show_xbounds=show_xbounds, show_ybounds=show_ybounds)
 
 
 def add_dot_dash_plot(axes=None, xs=None, ys=None):
