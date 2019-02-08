@@ -129,6 +129,52 @@ class RangeFrameArtist(Artist):
         return range_lines
 
 
+def axis_data_bounds(user_bounds, axis_data_bounds, axis_display_limits):
+    ''' Determine the data bound for a matplotlib Axis.
+
+    Parameters
+    ==========
+    user_bounds : 2-tuple of float or None
+        The data bounds requested by the user.
+    axis_data_bounds : 2-tuple of float
+        The axis data bounds, eg. `axes.dataLim.intervalx`
+    axis_display_limits : 2-tuple of float
+        The axis display limits, eg. `axes.get_xlim()`
+    '''
+    # use user_bounds if they are set, completing missing values with
+    # axis_data_bounds
+    if user_bounds is None:
+        vmin, vmax = axis_data_bounds
+    else:
+        vmin, vmax = user_bounds
+
+        if vmin is None:
+            vmin = axis_data_bounds[0]
+        if vmax is None:
+            vmax = axis_data_bounds[1]
+
+    # ensure that the returned values are within the axis_display limits
+    axis_vmin, axis_vmax = axis_display_limits
+    if axis_vmin is not None:
+        vmin = max(vmin, axis_vmin)
+    if axis_vmax is not None:
+        vmax = min(vmax, axis_vmax)
+
+    return vmin, vmax
+
+def axes_data_bound(ax, xbounds, ybounds):
+    ''' Determine the data bound for matplotlib Axes.
+
+    Parameters
+    ==========
+    xbounds, ybounds : 2-tuples of float or None
+        The x and y data limits requested by the user.
+    axis_display_limits : 2-tuple of float
+        The axis display limits, eg. `ax.get_xlim()`
+    '''
+    xmin, xmax = axis_data_bounds(xbounds, ax.dataLim.intervalx, ax.get_xlim())
+    ymin, ymax = axis_data_bounds(ybounds, ax.dataLim.intervaly, ax.get_ylim())
+    return xmin, xmax, ymin, ymax
 
 
 def add_range_frame(axes=None, color="k", linewidth=1.0,
@@ -151,6 +197,7 @@ def add_range_frame(axes=None, color="k", linewidth=1.0,
     linewidth: width of lines in range frame
 
     xbounds, ybounds: tuple (min,max) on x and y axes
+        If None, use values from axes.dataLim.
 
     show_x_min, show_x_max, show_y_min, show_y_max : bool (default: True)
         If true, add the value of the minimum or maximum data value on the
@@ -160,15 +207,12 @@ def add_range_frame(axes=None, color="k", linewidth=1.0,
     if axes is None:
         axes = matplotlib.pylab.gca()
 
-    if xbounds is None:
-        xbounds = axes.dataLim.intervalx
-    if ybounds is None:
-        ybounds = axes.dataLim.intervaly
+    xmin, xmax, ymin, ymax = axes_data_bound(axes, xbounds, ybounds)
 
     # transform x and y bounds from data to axes coordinates in [0, 1]
     trans = axes.transData + axes.transAxes.inverted()
-    frame_xmin, frame_ymin = trans.transform_point((xbounds[0], ybounds[0]))
-    frame_xmax, frame_ymax = trans.transform_point((xbounds[1], ybounds[1]))
+    frame_xmin, frame_ymin = trans.transform_point((xmin, ymin))
+    frame_xmax, frame_ymax = trans.transform_point((xmax, ymax))
 
     axes.add_artist(RangeFrameArtist(color=color,
                                      linewidth=linewidth,
@@ -176,7 +220,7 @@ def add_range_frame(axes=None, color="k", linewidth=1.0,
                                      ybounds=(frame_ymin, frame_ymax)))
 
     cleanframe_and_ticks(axes)
-    add_range_ticks(axes, xbounds, ybounds,
+    add_range_ticks(axes, (xmin, xmax), (ymin, ymax),
                     show_x_min=show_x_min, show_x_max=show_x_max,
                     show_y_min=show_y_min, show_y_max=show_y_max)
 
