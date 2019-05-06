@@ -14,7 +14,7 @@ def minmax(data):
 etframes.add_range_frame(gca(),
                          xbounds=minmax(xs),
                          ybounds=minmax(ys),
-                         show_y_min=False)
+                         show_ybounds=(False, True))
 
 show()
 
