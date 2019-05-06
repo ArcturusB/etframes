@@ -22,8 +22,14 @@ def cleanframe_and_ticks(axes):
     axes.set_frame_on(False)
 
     # Only show ticks on bottom and left frame
-    axes.get_xaxis().tick_bottom()
-    axes.get_yaxis().tick_left()
+    if axes.xaxis.get_ticks_position() in ('bottom', 'default'):
+        axes.xaxis.tick_bottom()
+    if axes.xaxis.get_ticks_position() == 'top':
+        axesxaxis.tick_top()
+    if axes.yaxis.get_ticks_position() in ('left', 'default'):
+        axes.yaxis.tick_left()
+    if axes.yaxis.get_ticks_position() == 'right':
+        axes.yaxis.tick_right()
 
 def adjust_ticks_to_bounds(ticks, minor_ticks, bounds,
                            pad=1e-5, show_bounds=False):
@@ -101,19 +107,25 @@ def add_range_ticks(axes, xbounds, ybounds,
 class RangeFrameArtist(Artist):
     "Draws range frames on a graph"
     
-    def __init__(self, color, linewidth, xbounds, ybounds):
+    def __init__(self, color, linewidth, xbounds, ybounds,
+                 xpos='bottom', ypos='left'):
         """
         color: str indicating color of line
         linewidth: width of line to draw
         xbounds, ybounds: tuple (min,max) of data on x and y axis, as a
             fraction of the axes size.
+        xpos, ypos: tuple of str
+            the position of the lines ('bottom' or 'top' for xpos; 'left' or
+            'right' for ypos)
         """
         Artist.__init__(self)
         self.color = color
         self.linewidth = linewidth
         self.xbounds = xbounds
         self.ybounds = ybounds
-        
+        self.xpos = dict(bottom=0, top=1).get(xpos, 0)
+        self.ypos = dict(left=0, right=1).get(ypos, 0)
+
     def draw(self, renderer, *args, **kwargs):
         if not self.get_visible(): return
 
@@ -122,9 +134,9 @@ class RangeFrameArtist(Artist):
 
 
     def make_range_frame(self):
-
-        xline = [(self.xbounds[0], 0), (self.xbounds[1], 0)]
-        yline = [(0, self.ybounds[0]), (0, self.ybounds[1])]
+        
+        xline = [(self.xbounds[0], self.xpos), (self.xbounds[1], self.xpos)]
+        yline = [(self.ypos, self.ybounds[0]), (self.ypos, self.ybounds[1])]
 
         range_lines = LineCollection(segments=[xline, yline],
                                      linewidths=[self.linewidth],
@@ -225,7 +237,10 @@ def add_range_frame(axes=None, color="k", linewidth=1.0,
     axes.add_artist(RangeFrameArtist(color=color,
                                      linewidth=linewidth,
                                      xbounds=(frame_xmin, frame_xmax),
-                                     ybounds=(frame_ymin, frame_ymax)))
+                                     ybounds=(frame_ymin, frame_ymax),
+                                     xpos=axes.xaxis.get_ticks_position(),
+                                     ypos=axes.yaxis.get_ticks_position(),
+                                     ))
 
     cleanframe_and_ticks(axes)
     add_range_ticks(axes, (xmin, xmax), (ymin, ymax),
